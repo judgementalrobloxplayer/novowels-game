@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Create List</title>
+  <link rel="stylesheet" href="main.css">
+</head>
+<body id="main-body2">
+<button class="back" onclick="history.back()">Back</button>
+<br>
+<div id="container">
+  <div class="border2">
+    <div class="TitleBox">
+      <label class="text" for="TitleInput">Set Name</label>
+      <input type="text" placeholder="Enter Title" id="TitleInput" class="title" required><br><br>
+      <label class="text" for="timeInput">Time Per Question (seconds)</label>
+      <input type="number" placeholder="Enter in seconds" id="timeInput" class="title" required>
+    </div>
+    <div class="border1">
+      <div class="CategoryBox">
+      <label class="text" for="input_1_category">Category</label>
+      <input type="text" placeholder="Enter a category" class="categoryinput" id="input_1_category">
+    </div>
+      <br>
+      <textarea placeholder="Enter words seperated by a new line" rows="5" class="textinput" id="input_1_word"></textarea>
+    </div>
+  </div>
+  <div class="button-group">
+    <button class="button" onclick="addInput(this)">+</button>
+    <button class="button" onclick="removeInput(this)">-</button>
+  </div>
+  <button class="btn" id="submit_button" onclick="checkEmpty()">Submit</button>
+</div>
+<div class="message-container" id="messageContainer">
+      <div class="message" id="emptyMessage">Empty box detected</div>
+</div>
+<div class="modal" id= "myModal">
+  <div class="modal-content">
+      <p>New Set Created</p>
+      <p>Game ID: <a id="gameID" style="all:revert!important;"></a></p>
+      <button class="back-button-modal" onclick="history.back()">Back</button>
+      </div>
+  </div>
+
+  <script src="create.js"></script>
+  <script>
+    let inputCount = 1;
+
+    function addInput(button) {
+      const container = document.getElementById('container');
+      const newDiv = document.createElement('div');
+      const uniqueID = `input_${document.getElementsByClassName('border2').length + 1}`;
+      newDiv.className = 'border2';
+      newDiv.innerHTML = `
+        <div class="border1">
+          <div class="CategoryBox">
+          <label class="text" for="${uniqueID}_category">Category</label>
+          <input type="text" placeholder="Enter a category" class="categoryinput" id="${uniqueID}_category">
+        </div>
+            <br>
+            <textarea placeholder="Enter words separated by a new line" rows="5" class="textinput" id="${uniqueID}_word"></textarea>
+        </div>
+      `;
+      container.insertBefore(newDiv, button.parentNode);
+    }
+
+    function removeInput(button) {
+      const container = document.getElementById('container');
+      const currentInputContainer = button.parentNode.previousElementSibling;
+      if (document.getElementsByClassName('border2').length === 1) {
+        return;
+      }
+      container.removeChild(currentInputContainer);
+    }
+
+    function checkEmpty() {
+      const inputContainers = document.getElementsByClassName('border2');
+      let isEmpty = false;
+      const categories = [];
+      const wordLists = [];
+
+      const titleBox = document.getElementById('TitleInput');
+      const timeBox = document.getElementById('timeInput');
+
+      if (titleBox.value.trim() === '' || timeBox.value.trim() === '') {
+          isEmpty = true;
+      } else {
+        for (const container of inputContainers) {
+        const categoryInput = container.querySelector('.categoryinput');
+        const wordInput = container.querySelector('.textinput');
+
+        if (categoryInput.value.trim() === '' || wordInput.value.trim() === '') {
+          isEmpty = true;
+          break;
+        }
+
+        categories.push(categoryInput.value.trim());
+        wordLists.push(wordInput.value.trim().split('\n').filter(word => word.trim() !== ''));
+        }
+      }
+
+      const modal = document.getElementById('myModal');
+      const gameIDSpan = document.getElementById('gameID');
+      const emptyMessage = document.getElementById('emptyMessage');
+      
+      if (isEmpty) {
+        emptyMessage.style.display = 'block';
+        setTimeout(() => {
+          emptyMessage.style.opacity = '0';
+          setTimeout(() => {
+            emptyMessage.style.display = 'none';
+            emptyMessage.style.opacity = '1';
+          }, 500);
+        }, 3000);
+        modal.style.display = 'none';
+        return;
+      } else {
+        startCreate();
+      }
+    }
+
+  </script>
+</body>
+</html>

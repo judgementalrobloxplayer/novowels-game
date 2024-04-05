@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Game Page</title>
+	<link rel="stylesheet" href="./main.css">
+	<script src="newWord.js"></script>
+	<script>
+	let wordList = [];
+	let answer;
+	let answerNoSpace;
+	let currentIndex = 0;
+	let correct = 0;
+	let guess ="";
+	let near = 0;
+	let incorrect = 0;
+	let timeVar;
+	let time;
+	let tTime;
+	let totalGameTime;
+	let game = true;
+		
+	getWord((result, error) => {
+		if(result) {
+			tTime = result.data['time'];
+			time = tTime;
+			totalGameTime = tTime*10;
+			for(const category in result.data.data) {
+				result.data.data[category].words.sort(() => Math.random() -0.5);
+			}
+			result.data.data.sort(() => Math.random() -0.5);
+
+			for(const category in result.data.data) {
+				const words = result.data.data[category];
+				words.words.forEach(word => {
+					const entry = [words.category, convertSpecialCharacters(word)];
+					wordList.push(entry);
+				});
+				
+			}
+
+			
+			
+		} else {
+			console.error('Error:', error);
+		}
+	});
+	
+
+	function nextWord() {
+		if (currentIndex == wordList.length) {
+			game = false;
+			endGame();
+		} else {
+
+			const nextEntry = wordList[currentIndex];
+			currentIndex = (currentIndex + 1);
+			answer = nextEntry[1].replace(/[^a-zA-Z0-9 ]/gi, "").toUpperCase();
+			answerNoSpace = answer.replace(/\s+/g, "");
+
+			const vowelLessWord = answer.replace(/[aeiou]/gi, '');
+			const numSpaces = Math.floor(Math.random() * (vowelLessWord.length*.2)) + 1;
+			const positions = new Set();
+			while(positions.size < numSpaces) {
+				const position = Math.floor(Math.random() * (vowelLessWord.length - 1)) + 1;
+				positions.add(position);
+			}
+			const characters = vowelLessWord.split('');
+			positions.forEach(pos => {
+				characters.splice(pos, 0, ' ');
+			});
+
+			document.getElementById('clue').innerHTML = characters.join('').toUpperCase();
+			document.getElementById('category').innerHTML = nextEntry[0].toUpperCase();
+			document.getElementById("inputText").value = null;
+			document.getElementById('result').innerHTML = "&nbsp;";
+			document.getElementById("result").style.visibility = 'hidden';
+			document.getElementById("answer").style.visibility = 'hidden';
+			document.getElementById('answer').innerHTML = "&nbsp;";
+
+		}
+	}
+
+	function matchword() {
+		
+		document.getElementById("submitButton").disabled = true;
+		removeListener();
+		guess = document.getElementById("inputText").value.replace(/[^a-zA-Z0-9]/g, "").toUpperCase();
+		if(guess == answerNoSpace) {
+			document.getElementById('result').innerHTML = "That is correct!";
+			document.getElementById("result").style.color = 'green';
+			document.getElementById("result").style.visibility = 'visible';
+			document.getElementById("answer").style.visibility = 'visible';
+			document.getElementById('answer').innerHTML = "Answer:" + answer;
+			correct ++;
+			document.getElementById('correct').innerHTML = correct;
+		} else if (isSimilar()){
+			document.getElementById('result').innerHTML = "That is close";
+			document.getElementById("result").style.color = 'red';
+			document.getElementById("result").style.visibility = 'visible';
+			document.getElementById("answer").style.visibility = 'visible';
+			document.getElementById('answer').innerHTML = "Answer:" + answer;
+			near ++;
+			document.getElementById('close').innerHTML = near;
+		} else {
+			document.getElementById('result').innerHTML = "That is incorrect";
+			document.getElementById("result").style.color = 'red';
+			document.getElementById("result").style.visibility = 'visible';
+			document.getElementById("answer").style.visibility = 'visible';
+			document.getElementById('answer').innerHTML = "Answer:" + answer;
+			incorrect ++;
+			document.getElementById('incorrect').innerHTML = incorrect;
+
+		}
+		
+
+		clearInterval(timeVar);
+		setTimeout(() => {
+			sequence();
+			timeVar = window.setInterval(timer, 100);
+			document.getElementById("submitButton").disabled = false;
+			addListener();
+		}, 2000);
+	}
+
+	function addListener() {
+		document.addEventListener('keypress', enterfunction);
+	}
+
+	function removeListener() {
+		document.removeEventListener('keypress', enterfunction);
+
+	}
+
+	document.addEventListener('DOMContentLoaded', function() {
+		
+		document.getElementById("submitButton").disabled = true;
+		document.addEventListener('keypress', spacefunction);
+	});
+
+	function enterfunction(event) {
+		if (event.keyCode === 13) {
+			matchword();
+
+		}
+	}
+	function spacefunction(event){
+		if (event.keyCode === 32) {
+			document.getElementById("submitButton").disabled = false;
+			nextWord();
+			timeVar = window.setInterval(timer, 100);
+			document.removeEventListener('keypress', spacefunction);
+
+			document.getElementById('result').innerHTML = "&nbsp;";
+			document.getElementById("result").style.visibility = 'hidden';
+				addListener();
+
+			document.getElementById("inputText").focus();
+
+			
+		
+			
+		}	
+	}
+	
+
+	function sequence() {
+		time = tTime;
+		nextWord();
+	}
+
+	function timer() {
+		if (!game) {
+			return null;
+		}
+		time = (time-0.1).toFixed(1);
+		totalGameTime = (totalGameTime-0.1).toFixed(1);
+		document.getElementById('timer').innerHTML = time;
+		document.getElementById('totalTimer').innerHTML = totalGameTime;
+		if (totalGameTime <= 0) {
+			endGame();
+		} else if(time <= 0) {
+			matchword();
+		}
+	}
+	
+	function endGame() {
+		clearInterval(timeVar);
+		document.getElementById("myModal").style.display = 'block';
+		document.getElementById('incorrect1').innerHTML = incorrect;
+		document.getElementById('correct1').innerHTML = correct;
+		document.getElementById('close1').innerHTML = near;
+	}
+
+	function levenshteinDistance(a, b) {
+		const matrix = [];
+
+		for (let i = 0; i <= b.length; i++) {
+			matrix[i] = [i];
+		}
+
+		for (let j = 0; j <= a.length; j++) {
+			matrix[0][j] = j;
+		}
+
+		for (let i = 1; i <= b.length; i++) {
+			for (let j = 1; j <= a.length; j++) {
+				if (b.charAt(i - 1) == a.charAt(j - 1)) {
+					matrix[i][j] = matrix[i - 1][j - 1];
+				} else {
+					matrix[i][j] = Math.min(matrix[i - 1][j - 1] + 1, // substitution
+						Math.min(matrix[i][j - 1] + 1, // insertion
+							matrix[i - 1][j] + 1)); // deletion
+				}
+			}
+		}
+
+		return matrix[b.length][a.length];
+	}
+
+	function isSimilar() {
+		const distance = levenshteinDistance(guess, answerNoSpace);
+		const length = Math.max(guess.length, answerNoSpace.length);
+		const similarity = (length - distance) / length;
+		return similarity >= 0.8 && similarity < 1;
+	}
+
+	function convertSpecialCharacters(word) {
+    		const accentsMap = {
+			'À': 'A', 'Á': 'A', 'Â': 'A', 'Ã': 'A', 'Ä': 'A', 'Å': 'A',
+			'à': 'a', 'á': 'a', 'â': 'a', 'ã': 'a', 'ä': 'a', 'å': 'a',
+			'È': 'E', 'É': 'E', 'Ê': 'E', 'Ë': 'E',
+			'è': 'e', 'é': 'e', 'ê': 'e', 'ë': 'e',
+			'Ì': 'I', 'Í': 'I', 'Î': 'I', 'Ï': 'I',
+			'ì': 'i', 'í': 'i', 'î': 'i', 'ï': 'i',
+			'Ò': 'O', 'Ó': 'O', 'Ô': 'O', 'Õ': 'O', 'Ö': 'O',
+			'ò': 'o', 'ó': 'o', 'ô': 'o', 'õ': 'o', 'ö': 'o',
+			'Ù': 'U', 'Ú': 'U', 'Û': 'U', 'Ü': 'U',
+			'ù': 'u', 'ú': 'u', 'û': 'u', 'ü': 'u',
+			'Ý': 'Y', 'ý': 'y', 'ÿ': 'y',
+			'Ñ': 'N', 'ñ': 'n',
+			'Ç': 'C', 'ç': 'c'
+			};
+
+    		return word.replace(/[^\x00-\x7F]/g, function(character) {
+        		return accentsMap[character] || character;
+    		});
+	}
+		
+	</script>
+
+</head>
+
+<body>
+	<a class="back" href="index.html">Back</a>
+	<h1>Guess the Word!</h1>
+	
+	<div class="border">
+		<div id="info" >
+			<h2>Category: <br><span id="category">&nbsp;</span></h2>
+			<h2>Clue: <br><span id="clue">&nbsp;</span></h2>
+			<div class = "order">
+			<div class = "score">
+				<h2>Correct: <span id="correct">0</span></h2>
+				<h2>Close: <span id="close">0</span></h2>
+				<h2>Incorrect: <span id="incorrect">0</span></h2>
+			</div>
+			<div class="time">
+				<h2>Time Per Clue:<span id="timer">0.0</span></h2>
+				<h2>Time Per Game:<span id="totalTimer">0.0</span></h2>
+			</div>
+			</div>
+		</div>
+	
+	
+		<div id="input" >
+			<input type="text" id="inputText" placeholder="type your guess">
+			<h2 id="result" style = "color: blue"> Press Space To Start</h2>
+			<h2 id="answer" style="visibility:hidden;">&nbsp;</h2>
+			<button type="submit" class="btn" id="submitButton" value="Submit" onclick="javascript:matchword();" onkeypress="">Submit</button>
+		</div>
+
+		<div class="modal" id= "myModal">
+			<div class="modal-content-index">
+				<script>
+					function clipboard() {
+						const queryString = window.location.search;
+						const urlParams = new URLSearchParams(queryString);
+						const gameId = urlParams.get('id');
+						const clipboardText = "NoVowels \nGame Link: " + location.protocol + "//" + location.host + location.pathname.slice(0, -9) + "game.html?id=" + gameId + "\n\nI got: \nCorrect: " + correct + "\nClose: " + near + "\nIncorrect: " + incorrect + "\nTime Remaining: " + totalGameTime + "s";
+						navigator.clipboard.writeText(clipboardText);
+					}
+				</script>
+				<h2>Correct: <span id="correct1"></span></h2>
+				<h2>Close: <span id="close1"></span></h2>
+				<h2>Incorrect: <span id="incorrect1"></span></h2>
+				<button class="back-button-modal" onclick="clipboard()">Copy to Clipboard</button> <br></br>
+			  	<a class="back-button-modal" href="index.html">Back</a>
+			</div>
+		</div>
+	</div>
+</body>
+
+</html>

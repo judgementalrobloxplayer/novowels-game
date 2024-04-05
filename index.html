@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>No Vowels</title>
+    <link rel="stylesheet" href="main.css">
+    <style>
+        .modal {
+            display: none; 
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%; 
+            height: 100%; 
+            overflow: auto; 
+            background-color: rgba(0, 0, 0, 0.4);
+            padding-top: 60px;
+        }
+
+        .modal-content {
+            background-color: #fefefe;
+            margin: 5% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%; 
+        }
+
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+
+        .close:hover,
+        .close:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .btn-container {
+            text-align: center;
+        }
+    </style>
+</head>
+    <script>
+        const queryString = window.location.search;
+        const urlParams = new URLSearchParams(queryString);
+        const gameId = urlParams.get('id');
+        if (gameId && gameId.length == 6 ) {
+            window.addEventListener('DOMContentLoaded', function() {
+                document.getElementById("inputText").value = gameId;
+            });  
+        } 
+    </script>
+</head>
+<body id="main-body">
+
+    <div id="main-container">
+        <h1 class="big-title">No Vowels</h1> 
+    
+            <div id="input">
+                    <div class="error-message" id="error-message"></div>
+                    <a style="color: white;" href="list.html">
+                        <button id="submit" class="btn"  type="button">Play Existing Game</button> 
+                    </a>
+                    <div class="or">or</div>
+                    <a href="create.html">
+                        <button id="create" class="btn" type="button" >Create Game</button>
+                    </a>
+                    <button id="how-to-play" class="btn how-to-play" type="button">How to Play</button>
+                <div>
+            </div>
+    </div>
+
+<div id="myModal" class="modal">
+
+    <div class="modal-content">
+      <span class="close">&times;</span>
+      <h2>Instructions</h2>
+      <p id="instructions">1. To start the game, press "space"<br>
+          2. Words will have their vowels removed, so you must guess the word based on the category<br>
+          3. You will have a certain amount of time per "round" to guess a single word and different time for the whole game <br>
+          4. After putting in your guess, press "enter" or click the "submit" button to place your guess <br>
+      </p>
+    </div>
+  
+  </div>
+
+    <script>
+    var modal = document.getElementById("myModal");
+    var btn = document.getElementById("how-to-play");
+    var span = document.getElementsByClassName("close")[0];
+    btn.onclick = function() {
+        modal.style.display = "block";
+    }
+    span.onclick = function() {
+        modal.style.display = "none";
+    }
+    window.onclick = function(event) {
+        if (event.target == modal) {
+            modal.style.display = "none";
+        }
+    }
+        function validateForm() {
+            var textBoxValue = document.getElementById('inputText').value;
+            var errorMessage = document.getElementById('error-message');
+
+            if (textBoxValue.length !== 6) {
+                errorMessage.textContent = "Invalid ID";
+                return false;
+            } else {
+                errorMessage.textContent = ""; 
+            }
+
+            const checkExistData = new FormData();
+            checkExistData.append('type', 'checkID');
+            checkExistData.append('listID', textBoxValue);
+
+            fetch('./fetch.php', {
+                method: 'POST',
+                body: checkExistData
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.exists == 1) {
+                    window.location.replace("./game.html?id=" + textBoxValue);
+                } else {
+                    errorMessage.textContent = "Invalid ID";
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+
+            return false;
+        }
+
+    </script>
+
+</body>
+</html>

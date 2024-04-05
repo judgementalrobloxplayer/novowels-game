@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Game List</title>
+    <link rel="stylesheet" href="main.css">
+</head>
+<body id = "main-body2">
+    <a class="back" href="index.html">Back</a>
+    <div class="border5">
+
+	<h1>CHOOSE A GAME</h1>
+    <button id="randombutton" class="btn" type="button" onclick="random()">Random Game</button>
+    <div class="border">
+	<table id="gamelist" class="list">
+            <thead>
+                <tr class="head">
+                    <th >Game Code</th>
+                    <th class="Name">Room Name</th>
+                    <th ></th>
+                </tr>
+            </thead>
+    </table>
+    
+	</div>
+    </div>
+
+   
+    <script>
+        function random() {
+            const randGame = new FormData();
+            randGame.append('type', 'rand');
+
+            fetch('./fetch.php', {
+                method: 'POST',
+                body: randGame
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.exists == 1) {
+                    window.location.replace("./game.html?id=" + data.code);
+                } 
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+
+        }
+
+        document.addEventListener("DOMContentLoaded", (event) => {
+            const gameList = new FormData();
+            gameList.append('type', 'list');
+
+            fetch('./fetch.php', {
+                method: 'POST',
+                body: gameList
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                for(let i = 0; i < data.list.length; i++) {
+                    let line = data.list[i];
+                    var table = document.getElementById("gamelist");
+                    var row = table.insertRow(i+1);
+                    var listid = row.insertCell(0);
+                    var title = row.insertCell(1);
+                    var playlink = row.insertCell(2);
+                    listid.innerHTML = line.listid;
+                    title.innerHTML = line.title;
+                    title.className = "TitleName";
+                    var link = '<a style.text-decoration="inherit;" href="./game.html?id=' + line.listid + '"><button class="play">Play!</button></a>'
+
+                    playlink.innerHTML = link;
+                    playlink.className="BoundPlay"
+                
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+
+        });
+    
+    </script>
+</body>
+</html>
